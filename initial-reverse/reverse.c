@@ -12,12 +12,37 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
+    if(argv[1] == argv[2]) {
+        fprintf(stderr, "Input and output file must differ");
+        exit(1);
+    }
+
     if(argc > 3) {
         fprintf(stderr, "usage: reverse <input> <output>");
         exit(1);
     }
     else if(argc == 1) {
+        printf("Enter strings one by one and press (ctrl-D) to end: \n");
+        char buff[100];
+        while(fgets(buff, sizeof(buff), stdin)) {
+            if(count == capacity) {
+                capacity *= 2;
+                char **temp = realloc(strings, capacity * sizeof(*strings));
+                if(temp == NULL) {
+                    perror("realloc didn't work properly");
+                    break;
+                }
+                strings = temp;
+            }
 
+            strings[count] = malloc(strlen(buff) + 1);
+            if(strings[count] == NULL) {
+                perror("malloc didn't work properly");
+                break;
+            }
+            strcpy(strings[count], buff);
+            count++;
+        }
     }
     else if(argc > 1) {
         /*====== Read File ======*/
@@ -63,7 +88,7 @@ int main(int argc, char* argv[]) {
         }
 
         for(int i = count - 1; i >= 0; i--) {
-            fprintf(file2, strings[i]);
+            fprintf(file2, "%s", strings[i]);
             free(strings[i]);
         }
     }
