@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
 int main(int argc, char* argv[]) {
 
     int count = 0;
@@ -12,17 +14,24 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    if(argv[1] == argv[2]) {
-        fprintf(stderr, "Input and output file must differ");
-        exit(1);
+    if(argc == 3) {
+        char* input = strrchr(argv[1], '/');
+        char* output = strrchr(argv[2], '/');
+
+        input = input ? input + 1 : argv[1];
+        output = output ? output + 1 : argv[2];
+        
+        if(strcmp(input,output) == 0) {
+            fprintf(stderr, "reverse: input and output file must differ\n");
+            exit(1);
+        }
     }
 
     if(argc > 3) {
-        fprintf(stderr, "usage: reverse <input> <output>");
+        fprintf(stderr, "usage: reverse <input> <output>\n");
         exit(1);
     }
     else if(argc == 1) {
-        printf("Enter strings one by one and press (ctrl-D) to end: \n");
         char buff[100];
         while(fgets(buff, sizeof(buff), stdin)) {
             if(count == capacity) {
@@ -48,7 +57,7 @@ int main(int argc, char* argv[]) {
         /*====== Read File ======*/
         FILE* file1 = fopen(argv[1], "r");
         if(file1 == NULL) {
-            fprintf(stderr, "error: cannot open file 'input.txt'");
+            fprintf(stderr, "reverse: cannot open file '%s'\n", argv[1]);
             exit(1);
         }
 
