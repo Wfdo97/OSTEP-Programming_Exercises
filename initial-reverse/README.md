@@ -144,3 +144,6 @@ type `cp reverse.c reverse.v1.c` to make a copy into the file
 `reverse.v1.c`. More sophisticated developers use version control systems git
 (perhaps through github); such a tool is well worth learning, so do it!
 
+## Completed Test Cases
+
+<img width="564" alt="Completed Test" src="https://github.com/user-attachments/assets/d6cceb7e-cb12-4101-a052-f50c50f35c59" />
