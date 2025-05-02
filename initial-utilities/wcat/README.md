@@ -23,5 +23,6 @@ the relevant
 [README](https://github.com/remzi-arpacidusseau/ostep-projects/blob/master/tester/README.md)
 for details.
 
+## Completed
 
-
+<img width="575" alt="Completed Test" src="https://github.com/user-attachments/assets/e1ed6034-ee35-478f-bcd0-23d0454af5b9" />
