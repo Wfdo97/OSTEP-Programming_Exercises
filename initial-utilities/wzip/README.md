@@ -21,3 +21,5 @@ the `tester` directory of this repository. This program has a few options; see
 the relevant
 [README](https://github.com/remzi-arpacidusseau/ostep-projects/blob/master/tester/README.md)
 for details.
+## Completed Test Cases
+<img width="582" alt="Screenshot 2025-05-07 at 11 49 16 PM" src="https://github.com/user-attachments/assets/cc28f813-e278-4572-bf60-7295d38baab8" />
