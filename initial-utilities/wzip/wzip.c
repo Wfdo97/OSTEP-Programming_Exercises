@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     size_t resCap = 0;
     size_t resLen = 0;
 
-    // if(argc > 2) {
+    if(argc > 2) {
         for(int i = 1; i < argc; i++) {
             FILE* fp = fopen(argv[i], "r");
             if(fp == NULL) {
@@ -66,34 +66,45 @@ int main(int argc, char* argv[]) {
         fwrite(&temp, sizeof(temp), 1, stdout);
 
         free(comb);
-    // }
-    // else if(argc == 2) {
-        
-    //     FILE* fp = fopen(argv[1], "r");
-    //         if(fp == NULL) {
-    //             printf("file cannot be open\n");
-    //             exit(1);
-    //         }
+    }
+    else if(argc == 2) {
+        FILE* fp = fopen(argv[1], "r");
+        if(fp == NULL) {
+            printf("file cannot be open\n");
+            exit(1);
+        }
 
-    //     while((nread = getline(&line, &len, fp)) != -1) {
-    //         char temp = line[0];
-    //         uint32_t count = 1;
-    //         for(int i = 1; i < len; i++) {
-                
-    //             if(line[i] == temp) {
-    //                 count++;
-    //             }
-    //             else {
-    //                 fwrite(&count, sizeof(count), 1, stdout);
-    //                 fwrite(&temp, sizeof(temp), 1, stdout);
-    //                 temp = line[i];
-    //                 count = 1;
-    //             }
-    //         }
-    //         fwrite(&count, sizeof(count), 1, stdout);
-    //         fwrite(&temp, sizeof(temp), 1, stdout);
-    //     }
-    // }
+        char temp;
+        uint32_t count = 1;
+        int first = 1;
+
+        while((nread = getline(&line, &len, fp)) != -1) {
+            
+            for(ssize_t i = 0; i < nread; i++) {
+                char c = line[i];
+
+                if(first) {
+                    temp = c;
+                    count = 1;
+                    first = 0;
+                }
+                else if(c == temp) {
+                    count++;
+                }
+                else {
+                    fwrite(&count, sizeof(count), 1, stdout);
+                    fwrite(&temp, sizeof(temp), 1, stdout);
+                    temp = c;
+                    count = 1;
+                }
+            }
+        }
+        if(!first) {
+            fwrite(&count, sizeof(count), 1, stdout);
+            fwrite(&temp, sizeof(temp), 1, stdout);
+        }
+        fclose(fp);
+    }
     
     free(line);
     return 0;
