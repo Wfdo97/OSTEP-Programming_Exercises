@@ -39,6 +39,17 @@ int main(int argc, char* argv[]) {
                 if(strcmp(strVector[0], "cd") == 0 && index > 1 && index < 3) {
                     printf("%s\n", "this is correct");
                 }
+                if(strcmp(strVector[0], "ls") == 0 && index > 0) {
+                    if(access(strVector[1], X_OK) != -1) {
+                        printf("%s\n", "this is correct");
+                    }
+                    else {
+                        char error_message[128];
+                        int len = snprintf(error_message, sizeof(error_message),
+                            "ls: %s: No such file or directory\n", strVector[1]);
+                        write(STDERR_FILENO, error_message, (size_t)len);
+                    }
+                }
                 else {
                     char error_message[30] = "An error has occurred\n";
                     write(STDERR_FILENO, error_message, strlen(error_message));
