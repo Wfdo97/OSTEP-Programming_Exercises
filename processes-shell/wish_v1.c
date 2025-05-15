@@ -155,6 +155,14 @@ void getTokens(FILE* input) {
     }
 }
 
+void execCommand() {
+
+}
+
+void redirection(char* arr[], int start) {
+
+}
+
 void error() {
     char error_message[30] = "An error has occured\n";
     write(STDERR_FILENO, error_message, strlen(error_message));
