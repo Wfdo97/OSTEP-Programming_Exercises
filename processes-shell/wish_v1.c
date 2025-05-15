@@ -3,6 +3,11 @@
 #include <string.h>
 #include <unistd.h>
 
+char* arrayOfTokens[100];
+int idx = 0;
+int childPIds[100];
+int numOfChilds = 0;
+
 int main(int argc, char* argv[]) {
     
     if(argc == 2) {
@@ -29,17 +34,17 @@ int main(int argc, char* argv[]) {
                 char* strVector[10];
                 char* token;
                 char* duplic = line;
-                int index = 0;
+                int indx = 0;
 
-                while(index < 10 && (token = strsep(&duplic, " \t")) != NULL) {
-                    strVector[index++] = token;
+                while(indx < 10 && (token = strsep(&duplic, " \t")) != NULL) {
+                    strVector[indx++] = token;
                 }
 
-                if(index == 0) continue;
+                if(indx == 0) continue;
 
                 if(strcmp(strVector[0], "cd") == 0) {
 
-                    if(index != 2) {
+                    if(indx != 2) {
 
                         char error_message[128];
                         int len = snprintf(error_message, sizeof(error_message),
@@ -56,7 +61,7 @@ int main(int argc, char* argv[]) {
                 }
                 else if(strcmp(strVector[0], "ls") == 0) {
 
-                    if(index != 2) {
+                    if(indx != 2) {
 
                         char error_message[128];
                         int len = snprintf(error_message, sizeof(error_message),
@@ -98,10 +103,11 @@ void getTokens(FILE* input) {
     while(1) {
         if(input == stdin) printf("%s", "wish> ");
 
+        int temp = idx;
+        idx = 0;
         char* line = NULL;
         size_t len = 0;
         ssize_t nread;
-        int index = 0;
 
         if(getline(&line, &len, input) == EOF) exit(0);
 
@@ -109,8 +115,43 @@ void getTokens(FILE* input) {
         char* newLine = (char*)malloc(sizeof(char) * lineSize * 6);
         int shift = 0;
 
-        
+        if(strcmp(line, "&\n") == 0) continue;
 
+        for(int i = 0; i < lineSize; i++) {
+            if(line[i] == '>' || line[i] == '&' || line[i] == '|') {
+                newLine[i + shift] = ' ';
+                shift++;
+                newLine[i + shift] = line[i];
+                i++;
+                newLine[i + shift] = ' ';
+                shift++;
+            }
+            newLine[i + shift] = line[i];
+        }
+
+        char* token;
+        while((token = strsep(&newLine, " \t")) != NULL) {
+            
+            if(strcmp(token, "&") == 0) {
+                arrayOfTokens[idx] = NULL;
+                idx++;
+            }
+            if(memcmp(token, "\0", 1)) {
+                arrayOfTokens[idx] = token;
+                idx++; 
+            }
+        }
+
+        for(int i = idx; i < temp; i++) {
+            arrayOfTokens[i] = NULL;
+        }
+
+        execCommands();
+        free(newLine);
+        for(int i = 0; i < numOfChilds; i++) {
+            int stat;
+            waitpid(childPIds[i], &stat, 0);
+        }
     }
 }
 
