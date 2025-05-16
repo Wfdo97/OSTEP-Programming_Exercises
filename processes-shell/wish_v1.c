@@ -2,97 +2,39 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+
+#define MAX_PATH 4096 
 
 char* arrayOfTokens[100];
 int idx = 0;
 int childPIds[100];
 int numOfChilds = 0;
+int numOfPaths = 2;
+char* paths[100] = {"/bin/", "/usr/bin/"};
+
+void getTokens(FILE*);
+void execCommand();
+int redirection(char* arr[], int start);
+void error();
 
 int main(int argc, char* argv[]) {
-    
-    if(argc == 2) {
-        char* line = NULL;
-        size_t len = 0;
-        ssize_t nread;
+
+    if(argc == 1) getTokens(stdin);
+    else if(argc == 2) {
 
         FILE* fp = fopen(argv[1], "r");
         if(fp == NULL) {
             error();
+            exit(1);
         }
-
-        // printf("%s\n", "wish> ");
-        while((nread = getline(&line, &len, fp)) != -1) {
-            
-            if(nread > 0 && line[nread - 1] == '\n') {
-                line[--nread] = '\0';
-            }
-
-            if(strcmp(line, "exit") == 0) {
-                exit(0);
-            }
-            else {
-                char* strVector[10];
-                char* token;
-                char* duplic = line;
-                int indx = 0;
-
-                while(indx < 10 && (token = strsep(&duplic, " \t")) != NULL) {
-                    strVector[indx++] = token;
-                }
-
-                if(indx == 0) continue;
-
-                if(strcmp(strVector[0], "cd") == 0) {
-
-                    if(indx != 2) {
-
-                        char error_message[128];
-                        int len = snprintf(error_message, sizeof(error_message),
-                            "cd: %s: No such file or directory\n", strVector[1]);
-                        write(STDERR_FILENO, error_message, (size_t)len);
-                    }
-                    else if(chdir(strVector[1]) == -1) {
-
-                        char error_message[128];
-                        int len = snprintf(error_message, sizeof(error_message),
-                            "cd: %s: No such file or directory\n", strVector[1]);
-                        write(STDERR_FILENO, error_message, (size_t)len);
-                    }
-                }
-                else if(strcmp(strVector[0], "ls") == 0) {
-
-                    if(indx != 2) {
-
-                        char error_message[128];
-                        int len = snprintf(error_message, sizeof(error_message),
-                            "ls: %s: No such file or directory\n", strVector[1]);
-                        write(STDERR_FILENO, error_message, (size_t)len);
-                    }
-                    else {
-                        if(access(strVector[1], X_OK) == 1) {
-
-                            printf("%s\n", "this is correct");
-                        }
-                        else {
-
-                            char error_message[128];
-                            int len = snprintf(error_message, sizeof(error_message),
-                            "ls: %s: No such file or directory\n", strVector[1]);
-                            write(STDERR_FILENO, error_message, (size_t)len);
-                        }
-                    }
-                }
-                else {
-                    
-                    char error_message[30] = "An error has occurred\n";
-                    write(STDERR_FILENO, error_message, strlen(error_message));
-                }
-            }
-            
-            // printf("%s\n", "wish> ");
-
+        else {
+            getTokens(fp);
         }
-        free(line);
+    }
+    else {
+        error();
+        exit(1);
     }
     
     return 0;
@@ -115,7 +57,7 @@ void getTokens(FILE* input) {
         char* newLine = (char*)malloc(sizeof(char) * lineSize * 6);
         int shift = 0;
 
-        if(strcmp(line, "&\n") == 0) continue;
+        if(!strcmp(line, "&\n")) continue;
 
         for(int i = 0; i < lineSize; i++) {
             if(line[i] == '>' || line[i] == '&' || line[i] == '|') {
@@ -132,7 +74,7 @@ void getTokens(FILE* input) {
         char* token;
         while((token = strsep(&newLine, " \t")) != NULL) {
             
-            if(strcmp(token, "&") == 0) {
+            if(!strcmp(token, "&")) {
                 arrayOfTokens[idx] = NULL;
                 idx++;
             }
@@ -146,7 +88,7 @@ void getTokens(FILE* input) {
             arrayOfTokens[i] = NULL;
         }
 
-        execCommands();
+        execCommand();
         free(newLine);
         for(int i = 0; i < numOfChilds; i++) {
             int stat;
@@ -156,11 +98,91 @@ void getTokens(FILE* input) {
 }
 
 void execCommand() {
+    for(int i = 0; i < idx; i++) {
+        if(!strcmp(arrayOfTokens[i], "exit")) {
+            if(arrayOfTokens[i + 1] == NULL) {
+                exit(0);
+            }
+            else {
+                i++;
+                error();
+            }
+        }
+        else if(!strcmp(arrayOfTokens[i], "cd")) {
+            if(chdir(arrayOfTokens[++i])) {
+                error();
+            }
 
+            while(arrayOfTokens[i] != NULL) {
+                i++;
+            }
+            i++;
+        }
+        else if(!strcmp(arrayOfTokens[i], "path")) {
+            numOfPaths = 0;
+            for(int j = 1; j < idx; j++) {
+
+                char* temp = realpath(arrayOfTokens[j], NULL);
+                if(temp != NULL) paths[j - 1] = temp;
+                else error();
+
+                numOfPaths++;
+            }
+            i += numOfPaths;
+        }
+        else {
+            int pid = fork();
+            childPIds[numOfChilds++] = pid;
+
+            if(pid == -1) {
+                error();
+                exit(1);
+            }
+            if(pid == 0) {
+                if(redirection(arrayOfTokens, i) != -1) {
+                    for(int j = 0; j < numOfPaths; j++) {
+                        char* exe = malloc(sizeof(char) * MAX_PATH);
+                        strcpy(exe, paths[j]);
+                        strcat(exe, "/");
+                        strcat(exe, arrayOfTokens[i]);
+                        if(!access(exe, X_OK)) {
+                            execv(exe, arrayOfTokens + i);
+                        }
+                    }
+                    error();
+                    exit(1);
+                }
+            }
+            else {
+                while(arrayOfTokens[i] != NULL) {
+                    i++;
+                }
+                i++;
+                
+                if(i < idx) continue;
+            }
+        }
+    }
 }
 
-void redirection(char* arr[], int start) {
-
+int redirection(char* arr[], int start) {
+    for(int i = start; arr[i] != NULL; i++) {
+        if(!strcmp(arr[i], ">") && i != start) {
+            arr[i] = NULL;
+            if(arr[i + 1] == NULL || arr[i + 2] != NULL) {
+                error();
+                return -1;
+            }
+            else {
+                int fd = open(arr[i + 1], O_WRONLY | O_CREAT, 0777);
+                dup2(fd, STDOUT_FILENO);
+                arr[i + 1] = NULL;
+                close(fd);
+            }
+            return i;
+        }
+    }
+    return 0;
 }
 
 void error() {
