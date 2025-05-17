@@ -49,7 +49,7 @@ void getTokens(FILE* input) {
         idx = 0;
         char* line = NULL;
         size_t len = 0;
-        ssize_t nread;
+        // ssize_t nread;
 
         if(getline(&line, &len, input) == EOF) exit(0);
 
